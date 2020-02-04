@@ -8,152 +8,125 @@ var Inventory = {
 
   init: function () {
     if (typeof $.cookie('inventory-popups-enabled') === 'undefined') {
-      Inventory.isPopupEnabled = true
-      $.cookie('inventory-popups-enabled', '1', { expires: 999 })
+      Inventory.isPopupEnabled = true;
+      $.cookie('inventory-popups-enabled', '1', { expires: 999 });
     }
 
     if (typeof $.cookie('inventory-menu-update-enabled') === 'undefined') {
-      Inventory.isMenuUpdateEnabled = true
-      $.cookie('inventory-menu-update-enabled', '1', { expires: 999 })
+      Inventory.isMenuUpdateEnabled = true;
+      $.cookie('inventory-menu-update-enabled', '1', { expires: 999 });
     }
 
     if (typeof $.cookie('reset-updates-inventory-enabled') === 'undefined') {
-      Inventory.resetButtonUpdatesInventory = false
-      $.cookie('reset-updates-inventory-enabled', '0', { expires: 999 })
+      Inventory.resetButtonUpdatesInventory = false;
+      $.cookie('reset-updates-inventory-enabled', '0', { expires: 999 });
     }
 
-    $('#enable-inventory').prop('checked', Inventory.isEnabled)
-    $('#enable-inventory-popups').prop('checked', Inventory.isPopupEnabled)
-    $('#enable-inventory-menu-update').prop('checked', Inventory.isMenuUpdateEnabled)
-    $('#reset-collection-updates-inventory').prop('checked', Inventory.resetButtonUpdatesInventory)
-    $('#inventory-stack').val(Inventory.stackSize)
+    $('#enable-inventory').prop("checked", Inventory.isEnabled);
+    $('#enable-inventory-popups').prop("checked", Inventory.isPopupEnabled);
+    $('#enable-inventory-menu-update').prop("checked", Inventory.isMenuUpdateEnabled);
+    $('#reset-collection-updates-inventory').prop("checked", Inventory.resetButtonUpdatesInventory);
+    $('#inventory-stack').val(Inventory.stackSize);
 
-    this.toggleMenuItemsDisabled()
+    this.toggleMenuItemsDisabled();
   },
 
   load: function () {
-    var _items = localStorage.getItem('inventory-items')
+    var _items = localStorage.getItem("inventory-items") || tempCollectedMarkers;
 
-    if (_items == null) { return }
+    if (_items == null)
+      return;
 
     _items.split(';').forEach(item => {
-      if (item == '') return
+      if (item == '') return;
 
-      var properties = item.split(':')
+      var properties = item.split(':');
 
       Inventory.items[properties[0]] = {
-        isCollected: properties[1] == '1',
-        amount: properties[2]
-      }
-    })
+        'isCollected': properties[1] == '1',
+        'amount': properties[2]
+      };
+
+    });
+
   },
 
   changeMarkerAmount: function (name, amount, skipInventory = false) {
     var marker = MapBase.markers.filter(_m => {
-      return (_m.text == name || _m.subdata == name)
-    })
+      return (_m.text == name || _m.subdata == name);
+    });
 
     $.each(marker, function (key, _m) {
       if (Inventory.isEnabled && (!skipInventory || skipInventory && Inventory.isMenuUpdateEnabled)) {
-        _m.amount = parseInt(_m.amount) + amount
+        _m.amount = parseInt(_m.amount) + amount;
 
-        if (_m.amount >= Inventory.stackSize) { _m.amount = Inventory.stackSize }
+        if (_m.amount >= Inventory.stackSize)
+          _m.amount = Inventory.stackSize;
 
-        if (_m.amount < 0) { _m.amount = 0 }
+        if (_m.amount < 0)
+          _m.amount = 0;
       }
 
-      if (Inventory.isEnabled) { _m.canCollect = _m.amount < Inventory.stackSize && !_m.isCollected } else { _m.canCollect = !_m.isCollected }
+      if (Inventory.isEnabled)
+        _m.canCollect = _m.amount < Inventory.stackSize && !_m.isCollected;
+      else
+        _m.canCollect = !_m.isCollected;
 
       if ((_m.isCollected || (Inventory.isEnabled && _m.amount >= Inventory.stackSize)) && _m.day == Cycles.data.cycles[Cycles.data.current][_m.category]) {
-        $(`[data-marker=${_m.text}]`).css('opacity', Settings.markerOpacity / 3)
-        $(`[data-type=${_m.subdata || _m.text}]`).addClass('disabled')
+        $(`[data-marker=${_m.text}]`).css('opacity', Settings.markerOpacity / 3);
+        $(`[data-type=${_m.subdata || _m.text}]`).addClass('disabled');
       } else if (_m.day == Cycles.data.cycles[Cycles.data.current][_m.category]) {
-        $(`[data-marker=${_m.text}]`).css('opacity', Settings.markerOpacity)
-        $(`[data-type=${_m.subdata || _m.text}]`).removeClass('disabled')
+        $(`[data-marker=${_m.text}]`).css('opacity', Settings.markerOpacity);
+        $(`[data-type=${_m.subdata || _m.text}]`).removeClass('disabled');
       }
 
-      $(`small[data-item=${name}]`).text(marker[0].amount)
-      $(`[data-type=${name}] .counter-number`).text(marker[0].amount)
+      $(`small[data-item=${name}]`).text(marker[0].amount);
+      $(`[data-type=${name}] .counter-number`).text(marker[0].amount);
 
-      // If the category is disabled, no needs to update popup
-      if (Settings.isPopupsEnabled && Layers.itemMarkersLayer.getLayerById(_m.text) != null && _m.day == Cycles.data.cycles[Cycles.data.current][_m.category]) { Layers.itemMarkersLayer.getLayerById(_m.text)._popup.setContent(MapBase.updateMarkerContent(_m)) }
-    })
+      //If the category is disabled, no needs to update popup
+      if (Settings.isPopupsEnabled && Layers.itemMarkersLayer.getLayerById(_m.text) != null && _m.day == Cycles.data.cycles[Cycles.data.current][_m.category])
+        Layers.itemMarkersLayer.getLayerById(_m.text)._popup.setContent(MapBase.updateMarkerContent(_m));
+    });
 
-    if ($('#routes').val() == 1) { Routes.drawLines() }
+    if ($("#routes").val() == 1)
+      Routes.drawLines();
 
-    Inventory.save()
-    Menu.refreshItemsCounter()
+    Inventory.save();
+    Menu.refreshItemsCounter();
   },
-
+  
   save: function () {
-    // Remove cookies from removed items
-    $.removeCookie('removed-items')
+    //Remove cookies from removed items
+    $.removeCookie('removed-items');
     $.each($.cookie(), function (key, value) {
       if (key.startsWith('removed-items')) {
         $.removeCookie(key)
       }
-    })
+    });
 
-    var temp = ''
+    var temp = "";
     $.each(MapBase.markers, function (key, marker) {
-      if (marker.day == Cycles.data.cycles[Cycles.data.current][marker.category] && (marker.amount > 0 || marker.isCollected)) { temp += `${marker.text}:${marker.isCollected ? '1' : '0'}:${marker.amount};` }
-    })
+      if (marker.day == Cycles.data.cycles[Cycles.data.current][marker.category] && (marker.amount > 0 || marker.isCollected))
+        temp += `${marker.text}:${marker.isCollected ? '1' : '0'}:${marker.amount};`;
+    });
 
-    localStorage.setItem('inventory-items', temp)
+    localStorage.setItem("inventory-items", temp);
+   
   },
 
   toggleMenuItemsDisabled: function () {
     if (!Inventory.isEnabled) {
-      $('#enable-inventory-popups').parent().parent().hide()
-      $('#enable-inventory-menu-update').parent().parent().hide()
-      $('#reset-collection-updates-inventory').parent().parent().hide()
-      $('#inventory-stack').parent().hide()
-      $('[data-target="#clear-inventory-modal"]').hide()
+      $('#enable-inventory-popups').parent().parent().hide();
+      $('#enable-inventory-menu-update').parent().parent().hide();
+      $('#reset-collection-updates-inventory').parent().parent().hide();
+      $('#inventory-stack').parent().hide();
+      $('[data-target="#clear-inventory-modal"]').hide();
     } else {
-      $('#enable-inventory-popups').parent().parent().show()
-      $('#enable-inventory-menu-update').parent().parent().show()
-      $('#reset-collection-updates-inventory').parent().parent().show()
-      $('#inventory-stack').parent().show()
-      $('[data-target="#clear-inventory-modal"]').show()
+      $('#enable-inventory-popups').parent().parent().show();
+      $('#enable-inventory-menu-update').parent().parent().show();
+      $('#reset-collection-updates-inventory').parent().parent().show();
+      $('#inventory-stack').parent().show();
+      $('[data-target="#clear-inventory-modal"]').show();
     }
   }
 }
-
-// Enable & disable inventory on menu
-$('#enable-inventory').on('change', function () {
-  Inventory.isEnabled = $('#enable-inventory').prop('checked')
-  $.cookie('inventory-enabled', Inventory.isEnabled ? '1' : '0', { expires: 999 })
-
-  MapBase.addMarkers()
-
-  Inventory.toggleMenuItemsDisabled()
-
-  if (Inventory.isEnabled) { $('.collection-sell, .counter').show() } else { $('.collection-sell, .counter').hide() }
-})
-
-$('#enable-inventory-popups').on('change', function () {
-  Inventory.isPopupEnabled = $('#enable-inventory-popups').prop('checked')
-  $.cookie('inventory-popups-enabled', Inventory.isPopupEnabled ? '1' : '0', { expires: 999 })
-
-  MapBase.addMarkers()
-})
-
-$('#enable-inventory-menu-update').on('change', function () {
-  Inventory.isMenuUpdateEnabled = $('#enable-inventory-menu-update').prop('checked')
-  $.cookie('inventory-menu-update-enabled', Inventory.isMenuUpdateEnabled ? '1' : '0', { expires: 999 })
-})
-
-$('#reset-collection-updates-inventory').on('change', function () {
-  Inventory.resetButtonUpdatesInventory = $('#reset-collection-updates-inventory').prop('checked')
-  $.cookie('reset-updates-inventory-enabled', Inventory.resetButtonUpdatesInventory ? '1' : '0', { expires: 999 })
-})
-
-if (Inventory.isEnabled) { $('.collection-sell, .counter').show() } else { $('.collection-sell, .counter').hide() }
-
-// Enable & disable inventory on menu
-$('#inventory-stack').on('change', function () {
-  var inputValue = parseInt($('#inventory-stack').val())
-  inputValue = !isNaN(inputValue) ? inputValue : 10
-  $.cookie('inventory-stack', inputValue, { expires: 999 })
-  Inventory.stackSize = inputValue
-})

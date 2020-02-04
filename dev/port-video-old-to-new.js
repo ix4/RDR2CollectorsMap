@@ -6,54 +6,55 @@
 // !!!
 
 // Import from items.json.
-var oldList = {}
+var oldList = {};
 
 // Import from port-source-coords-to-website-coords.js.
-var newList = {}
+var newList = {};
 
 Object.keys(oldList).forEach(category => {
-  if (category == 'random') return
-  if (category == 'american_flowers') return
+    if (category == "random") return;
+    if (category == "american_flowers") return;
 
-  Object.keys(oldList[category]).forEach(cycle => {
-    console.log(category, cycle)
+    Object.keys(oldList[category]).forEach(cycle => {
+        console.log(category, cycle);
 
-    for (var index = 0; index < oldList[category][cycle].length; index++) {
-      var element = oldList[category][cycle][index]
+        for (var index = 0; index < oldList[category][cycle].length; index++) {
+            var element = oldList[category][cycle][index];
 
-      var otherElement = newList[category][cycle].find(item => {
-        return item.text === element.text
-      })
+            var otherElement = newList[category][cycle].find(item => {
+                return item.text === element.text;
+            })
 
-      if (!otherElement) {
-        console.log('=== SKIPPED', element.text, '===')
-        continue
-      };
+            if (!otherElement) {
+                console.log('=== SKIPPED', element.text, '===');
+                continue;
+            };
 
-      var otherElementIndex = newList[category][cycle].findIndex(item => {
-        return item.text === element.text
-      })
+            var otherElementIndex = newList[category][cycle].findIndex(item => {
+                return item.text === element.text;
+            })
 
-      newList[category][cycle][otherElementIndex].tool = element.tool
+            newList[category][cycle][otherElementIndex].tool = element.tool;
 
-      if (element.video) {
-        newList[category][cycle][otherElementIndex].video = element.video
-      }
-    }
-  })
-})
+            if (element.video) {
+                newList[category][cycle][otherElementIndex].video = element.video;
+            }
+        }
+    });
+});
 
-function download (filename, text) {
-  var element = document.createElement('a')
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
-  element.setAttribute('download', filename)
 
-  element.style.display = 'none'
-  document.body.appendChild(element)
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
 
-  element.click()
+    element.style.display = 'none';
+    document.body.appendChild(element);
 
-  document.body.removeChild(element)
+    element.click();
+
+    document.body.removeChild(element);
 }
 
-download('items.json', JSON.stringify(newList, null, 4))
+download('items.json', JSON.stringify(newList, null, 4));
