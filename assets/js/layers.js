@@ -5,4 +5,4 @@ var Layers = {
   pinsLayer: new L.LayerGroup(),
   overlaysLayer: new L.LayerGroup(),
   oms: null
-};
+}
